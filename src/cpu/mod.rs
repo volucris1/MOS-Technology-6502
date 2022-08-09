@@ -40,12 +40,18 @@ impl CPU {
                 let addr = eval!(get u8);
                 self.memory.read(addr as usize)
             }};
+            (get u8, X) => {
+                eval!(get u8).wrapping_add(self.registers.x())
+            };
             (get (u8, X)) => {{
-                let addr = eval!(get u8).wrapping_add(self.registers.x());
+                let addr = eval!(get u8, X);
                 self.memory.read(addr as usize)
             }};
+            (get u8, Y) => {
+                eval!(get u8).wrapping_add(self.registers.y())
+            };
             (get (u8, Y)) => {{
-                let addr = eval!(get u8).wrapping_add(self.registers.y());
+                let addr = eval!(get u8, Y);
                 self.memory.read(addr as usize)
             }};
 
@@ -56,29 +62,43 @@ impl CPU {
                 let addr = eval!(get u16);
                 self.memory.read(addr as usize)
             }};
+            (get u16, X) => {
+                eval!(get u16).wrapping_add(self.registers.x() as u16)
+            };
             (get (u16, X)) => {{
-                let addr = eval!(get u16).wrapping_add(self.registers.x() as u16);
+                let addr = eval!(get u16, X);
                 self.memory.read(addr as usize)
             }};
+            (get u16, Y) => {
+                eval!(get u16).wrapping_add(self.registers.y() as u16)
+            };
             (get (u16, Y)) => {{
-                let addr = eval!(get u16).wrapping_add(self.registers.y() as u16);
+                let addr = eval!(get u16, Y);
                 self.memory.read(addr as usize)
             }};
-            (get indirect (u8, X)) => {{
+            (get indirect u8, X) => {{
                 let addr_to_addr = eval!(get u8).wrapping_add(self.registers.x());
                 let addr = u16::from_le_bytes([
                     self.memory.read(addr_to_addr as usize),
                     self.memory.read(addr_to_addr.wrapping_add(1) as usize)
                 ]);
+
+                addr
+            }};
+            (get indirect (u8, X)) => {{
+                let addr = eval!(get indirect u8, X);
                 self.memory.read(addr as usize)
             }};
-            (get indirect (u8), Y) => {{
+            (get indirect u8, Y) => {{
                 let addr_to_addr = eval!(get u8);
-                let addr = u16::from_le_bytes([
+                u16::from_le_bytes([
                     self.memory.read(addr_to_addr as usize),
                     self.memory.read(addr_to_addr.wrapping_add(1) as usize)
                 ])
-                .wrapping_add(self.registers.y() as u16);
+                .wrapping_add(self.registers.y() as u16)
+            }};
+            (get indirect (u8), Y) => {{
+                let addr = eval!(get indirect u8, Y);
                 self.memory.read(addr as usize)
             }};
 
@@ -131,6 +151,24 @@ impl CPU {
                 let word = eval!(get ($arg, $index_register));
                 self.ldy(word);
             }};
+
+            (STA ($arg:ident)) => {{
+                let addr = eval!(get $arg);
+                self.sta(addr as usize);
+            }};
+            (STA ($arg:ident, $index_register:ident)) => {{
+                let addr = eval!(get $arg, $index_register);
+                self.sta(addr as usize);
+            }};
+
+            (STA indirect ($arg:ident, $index_register:ident)) => {{
+                let addr = eval!(get indirect $arg, $index_register);
+                self.sta(addr as usize);
+            }};
+            (STA indirect ($arg:ident), Y) => {{
+                let addr = eval!(get indirect $arg, Y);
+                self.sta(addr as usize);
+            }};
         }
 
         match opcode {
@@ -154,6 +192,14 @@ impl CPU {
             0xB4 => eval!(LDY(u8, X)),
             0xAC => eval!(LDY(u16)),
             0xBC => eval!(LDY(u16, X)),
+
+            0x85 => eval!(STA(u8)),
+            0x95 => eval!(STA(u8, X)),
+            0x8D => eval!(STA(u16)),
+            0x9D => eval!(STA(u16, X)),
+            0x99 => eval!(STA(u16, Y)),
+            0x81 => eval!(STA indirect (u8, X)),
+            0x91 => eval!(STA indirect (u8), Y),
             _ => panic!("Unimplemented or illegal opcode: {:#04X}", opcode),
         }
     }
@@ -207,5 +253,9 @@ impl CPU {
 
         let flags = self.registers.ps_mut();
         set_flags!(flags, N, Z: y);
+    }
+
+    fn sta(&mut self, addr: usize) {
+        self.memory.write(addr, self.registers.a());
     }
 }

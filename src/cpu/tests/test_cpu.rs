@@ -148,3 +148,50 @@ fn test_ldy() {
     cpu.memory.write(0x12A0, 0x10);
     step!(0x10, 0b0011_0000);
 }
+
+#[test]
+fn test_sta() {
+    let program = [
+        0x85, 0x90, // STA $90
+        0x95, 0x10, // STA $90, X
+        0x8D, 0x11, 0x13, // STA $1311
+        0x9D, 0x10, 0x11, // STA $1110, X
+        0x99, 0x10, 0x90, // STA $9010, Y
+        0x81, 0x40, // STA ($40, X)
+        0x91, 0x10, // STA ($40, X)
+    ];
+
+    let mut cpu = create_cpu_and_load_program!(program);
+
+    macro_rules! step {
+        ($a:literal, $addr:literal) => {{
+            cpu.registers.set_a($a);
+            cpu.step();
+
+            assert_eq!(cpu.memory.read($addr), $a);
+        }};
+    }
+
+    step!(0x50, 0x90);
+
+    cpu.registers.set_x(0x10);
+    step!(0x50, 0x20);
+
+    step!(0x12, 0x1311);
+
+    cpu.registers.set_x(0x10);
+    step!(0x90, 0x1120);
+
+    cpu.registers.set_y(0x20);
+    step!(0x90, 0x9030);
+
+    cpu.registers.set_x(0x20);
+    cpu.memory.write(0x0060, 0x10);
+    cpu.memory.write(0x0061, 0x11);
+    step!(0x90, 0x1110);
+
+    cpu.memory.write(0x0010, 0x14);
+    cpu.memory.write(0x0011, 0x41);
+    cpu.registers.set_y(0x20);
+    step!(0x10, 0x4134);
+}
