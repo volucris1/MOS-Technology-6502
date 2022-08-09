@@ -118,6 +118,19 @@ impl CPU {
                 let word = eval!(get ($arg, $index_register));
                 self.ldx(word);
             }};
+
+            (LDY $arg:ident) => {{
+                let word = eval!(get $arg);
+                self.ldy(word);
+            }};
+            (LDY ($arg:ident)) => {{
+                let word = eval!(get ($arg));
+                self.ldy(word);
+            }};
+            (LDY ($arg:ident, $index_register:ident)) => {{
+                let word = eval!(get ($arg, $index_register));
+                self.ldy(word);
+            }};
         }
 
         match opcode {
@@ -135,6 +148,12 @@ impl CPU {
             0xB6 => eval!(LDX(u8, Y)),
             0xAE => eval!(LDX(u16)),
             0xBE => eval!(LDX(u16, Y)),
+
+            0xA0 => eval!(LDY u8),
+            0xA4 => eval!(LDY(u8)),
+            0xB4 => eval!(LDY(u8, X)),
+            0xAC => eval!(LDY(u16)),
+            0xBC => eval!(LDY(u16, X)),
             _ => panic!("Unimplemented or illegal opcode: {:#04X}", opcode),
         }
     }
@@ -181,5 +200,12 @@ impl CPU {
 
         let flags = self.registers.ps_mut();
         set_flags!(flags, N, Z: x);
+    }
+
+    fn ldy(&mut self, y: IndexRegister) {
+        self.registers.set_y(y);
+
+        let flags = self.registers.ps_mut();
+        set_flags!(flags, N, Z: y);
     }
 }
