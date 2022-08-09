@@ -85,28 +85,16 @@ impl CPU {
             (_LDA $word:ident) => {
                 self.lda($word)
             };
-            (LDA u8) => {{
-                let word = eval!(get u8);
+            (LDA $arg:ident) => {{
+                let word = eval!(get $arg);
                 eval!(_LDA word);
             }};
-            (LDA (u8)) => {{
-                let word = eval!(get (u8));
+            (LDA ($arg:ident)) => {{
+                let word = eval!(get ($arg));
                 eval!(_LDA word);
             }};
-            (LDA (u8, X)) => {{
-                let word = eval!(get (u8, X));
-                eval!(_LDA word);
-            }};
-            (LDA (u16)) => {{
-                let word = eval!(get (u16));
-                eval!(_LDA word);
-            }};
-            (LDA (u16, X)) => {{
-                let word = eval!(get (u16, X));
-                eval!(_LDA word);
-            }};
-            (LDA (u16, Y)) => {{
-                let word = eval!(get (u16, Y));
+            (LDA ($arg:ident, $index_register:ident)) => {{
+                let word = eval!(get ($arg, $index_register));
                 eval!(_LDA word);
             }};
             (LDA indirect (u8, X)) => {{
