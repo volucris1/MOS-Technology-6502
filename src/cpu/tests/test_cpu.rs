@@ -15,7 +15,7 @@ fn test_lda() {
         0xA9, 0x01, //       LDA $00
         0xA9, 0x00, //       LDA $00
         0xA9, 0x80, //       LDA $80
-        0xA5, 0x10, //       LDA $10
+        0xA5, 0x10, //       LDA $10h
         0xB5, 0x80, //       LDA $80, X
         0xAD, 0x34, 0x12, // LDA $1234
         0xBD, 0xFF, 0xFF, // LDA $FFFF, X
@@ -69,4 +69,43 @@ fn test_lda() {
     cpu.memory.write(0xB0, 0x11);
     cpu.memory.write(0x1120, 0x50);
     step!(0x50, 0b0011_0000);
+}
+
+#[test]
+fn test_ldx() {
+    let ram = [
+        0xA2, 0x10, // LDX #10
+        0xA6, 0xFA, // LDX $FA
+        0xB6, 0x10, // LDX $10, Y
+        0xAE, 0x34, 0x12, // LDX $1234
+        0xBE, 0x12, 0x34, // LDX $3412
+    ];
+
+    let mut cpu = create_cpu_and_load_program!(ram);
+
+    macro_rules! step {
+        ($result:literal, $flags:literal) => {{
+            cpu.step();
+            assert_eq!(cpu.registers.x(), $result);
+
+            let flags = cpu.registers.ps().raw();
+            assert_eq!(flags, $flags);
+        }};
+    }
+
+    step!(0x10, 0b0011_0000);
+
+    cpu.memory.write(0xFA, 0x50);
+    step!(0x50, 0b0011_0000);
+
+    cpu.registers.set_y(0x10);
+    cpu.memory.write(0x20, 0x90);
+    step!(0x90, 0b1011_0000);
+
+    cpu.memory.write(0x1234, 0x40);
+    step!(0x40, 0b0011_0000);
+
+    cpu.registers.set_y(0x10);
+    cpu.memory.write(0x3422, 0x90);
+    step!(0x90, 0b1011_0000);
 }

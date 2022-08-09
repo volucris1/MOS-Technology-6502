@@ -1,4 +1,4 @@
-use self::registers::{Accumulator, Registers};
+use self::registers::{Accumulator, IndexRegister, Registers};
 use crate::bit::Bit;
 use crate::memory::{DWord, Memory, Word};
 
@@ -113,6 +113,19 @@ impl CPU {
                 let word = eval!(get indirect (u8), Y);
                 eval!(_LDA word);
             }};
+
+            (LDX $arg:ident) => {{
+                let word = eval!(get $arg);
+                self.ldx(word);
+            }};
+            (LDX ($arg:ident)) => {{
+                let word = eval!(get ($arg));
+                self.ldx(word);
+            }};
+            (LDX ($arg:ident, $index_register:ident)) => {{
+                let word = eval!(get ($arg, $index_register));
+                self.ldx(word);
+            }};
         }
 
         match opcode {
@@ -124,6 +137,12 @@ impl CPU {
             0xB9 => eval!(LDA(u16, Y)),
             0xA1 => eval!(LDA indirect (u8, X)),
             0xB1 => eval!(LDA indirect (u8), Y),
+
+            0xA2 => eval!(LDX u8),
+            0xA6 => eval!(LDX(u8)),
+            0xB6 => eval!(LDX(u8, Y)),
+            0xAE => eval!(LDX(u16)),
+            0xBE => eval!(LDX(u16, Y)),
             _ => panic!("Unimplemented or illegal opcode: {:#04X}", opcode),
         }
     }
@@ -163,5 +182,12 @@ impl CPU {
 
         let flags = self.registers.ps_mut();
         set_flags!(flags, N, Z: a);
+    }
+
+    fn ldx(&mut self, x: IndexRegister) {
+        self.registers.set_x(x);
+
+        let flags = self.registers.ps_mut();
+        set_flags!(flags, N, Z: x);
     }
 }
