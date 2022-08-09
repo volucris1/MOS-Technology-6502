@@ -48,16 +48,20 @@ impl CPU {
                 let addr = eval!(get u8).wrapping_add(self.registers.y());
                 self.memory.read(addr as usize)
             }};
+
+            (get u16) => {{
+                self.fetch_dword()
+            }};
             (get (u16)) => {{
-                let addr = u16::from_le_bytes([eval!(get u8), eval!(get u8)]);
+                let addr = eval!(get u16);
                 self.memory.read(addr as usize)
             }};
             (get (u16, X)) => {{
-                let addr = u16::from_le_bytes([eval!(get u8), eval!(get u8)]).wrapping_add(self.registers.x() as u16);
+                let addr = eval!(get u16).wrapping_add(self.registers.x() as u16);
                 self.memory.read(addr as usize)
             }};
             (get (u16, Y)) => {{
-                let addr = u16::from_le_bytes([eval!(get u8), eval!(get u8)]).wrapping_add(self.registers.y() as u16);
+                let addr = eval!(get u16).wrapping_add(self.registers.y() as u16);
                 self.memory.read(addr as usize)
             }};
             (get indirect (u8, X)) => {{
